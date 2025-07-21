@@ -111,6 +111,78 @@
             animation: twinkle 6s ease-in-out infinite;
             pointer-events: none;
         }
+        
+        /* Mobile-specific styles */
+        .mobile-emoji {
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        
+        .mobile-emoji:hover, .mobile-emoji:active {
+            transform: scale(1.1);
+            border: 2px solid #8e44ad;
+            background: rgba(142, 68, 173, 0.1);
+            border-radius: 8px;
+        }
+        
+        .mobile-emoji.selected {
+            background: rgba(142, 68, 173, 0.3);
+            border: 2px solid #8e44ad;
+            border-radius: 8px;
+            transform: scale(1.05);
+        }
+        
+        .mobile-selected-emoji {
+            position: relative;
+            animation: pulse 0.5s ease-in-out;
+        }
+        
+        .mobile-selected-emoji::after {
+            content: '✓';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #27ae60;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .remove-emoji-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            transition: all 0.2s ease;
+        }
+        
+        .remove-emoji-btn:hover {
+            background: #c0392b;
+            transform: scale(1.1);
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -138,12 +210,26 @@
             const [showRhyme, setShowRhyme] = useState(false);
             const [isPlaying, setIsPlaying] = useState(false);
             const [speechSynthesis, setSpeechSynthesis] = useState(null);
+            const [isMobile, setIsMobile] = useState(false);
 
-            // Initialize speech synthesis
+            // Initialize speech synthesis and detect mobile
             useEffect(() => {
                 if ('speechSynthesis' in window) {
                     setSpeechSynthesis(window.speechSynthesis);
                 }
+                
+                // Detect mobile device
+                const checkMobile = () => {
+                    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+                    const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    const isSmallScreen = window.innerWidth <= 768;
+                    setIsMobile(isTouchDevice || isMobileUserAgent || isSmallScreen);
+                };
+                
+                checkMobile();
+                window.addEventListener('resize', checkMobile);
+                
+                return () => window.removeEventListener('resize', checkMobile);
             }, []);
 
             // Limited emoji library with 10 most popular emojis per category
@@ -324,6 +410,18 @@
                 setSelectedEmojis(selectedEmojis.filter((_, i) => i !== index));
             };
 
+            // Mobile-specific handlers
+            const handleEmojiTap = (emoji) => {
+                if (selectedEmojis.length < 6) {  // Allow up to 6 emojis
+                    setSelectedEmojis([...selectedEmojis, emoji]);
+                }
+            };
+
+            const handleSelectedEmojiTap = (index) => {
+                // On mobile, tapping a selected emoji removes it
+                removeEmoji(index);
+            };
+
             const handleGenerateRhyme = () => {
                 if (selectedEmojis.length === 0) return;
                 
@@ -483,14 +581,28 @@
                                         {emojiLibrary[activeCategory].map((emoji, index) => (
                                             <div
                                                 key={index}
-                                                draggable
-                                                onDragStart={(e) => handleDragStart(e, emoji)}
-                                                className="text-2xl sm:text-3xl lg:text-4xl p-2 sm:p-3 bg-gradient-to-br from-purple-200/20 to-pink-200/20 rounded-xl cursor-grab active:cursor-grabbing hover:scale-110 transition-transform duration-200 text-center shadow-sm hover:shadow-md backdrop-blur-sm border border-purple-400/30 hover:border-purple-300/50"
+                                                draggable={!isMobile}
+                                                onDragStart={!isMobile ? (e) => handleDragStart(e, emoji) : undefined}
+                                                onClick={isMobile ? () => handleEmojiTap(emoji) : undefined}
+                                                className={`text-2xl sm:text-3xl lg:text-4xl p-2 sm:p-3 bg-gradient-to-br from-purple-200/20 to-pink-200/20 rounded-xl transition-transform duration-200 text-center shadow-sm hover:shadow-md backdrop-blur-sm border border-purple-400/30 hover:border-purple-300/50 ${
+                                                    isMobile 
+                                                        ? 'mobile-emoji cursor-pointer' 
+                                                        : 'cursor-grab active:cursor-grabbing hover:scale-110'
+                                                } ${selectedEmojis.includes(emoji) && isMobile ? 'selected' : ''}`}
                                             >
                                                 {emoji}
                                             </div>
                                         ))}
                                     </div>
+                                    
+                                    {/* Mobile Instructions */}
+                                    {isMobile && (
+                                        <div className="mt-4 text-center">
+                                            <p className="text-purple-200 text-sm">
+                                                💫 Tap emojis to add them to your story! 
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Magic Story Book */}
@@ -502,8 +614,8 @@
                                     <div className="flex flex-col items-center">
                                         {/* Magic Book */}
                                         <div
-                                            onDrop={handleDrop}
-                                            onDragOver={handleDragOver}
+                                            onDrop={!isMobile ? handleDrop : undefined}
+                                            onDragOver={!isMobile ? handleDragOver : undefined}
                                             className={`relative w-64 sm:w-80 h-40 sm:h-48 rounded-lg shadow-2xl flex items-center justify-center transition-all duration-300 ${
                                                 isAnimating ? 'animate-pulse scale-105' : ''
                                             }`}
@@ -544,21 +656,37 @@
                                                 ) : selectedEmojis.length === 0 ? (
                                                     <div className="text-purple-100 text-center">
                                                         <div className="text-2xl sm:text-3xl mb-2">📝</div>
-                                                        <div className="text-xs sm:text-sm">Drop story elements here!</div>
+                                                        <div className="text-xs sm:text-sm">
+                                                            {isMobile ? 'Your story elements will appear here!' : 'Drop story elements here!'}
+                                                        </div>
                                                     </div>
                                                 ) : (
                                                     selectedEmojis.map((emoji, index) => (
                                                         <div
                                                             key={index}
-                                                            onClick={() => removeEmoji(index)}
-                                                            className="text-2xl sm:text-3xl cursor-pointer hover:scale-110 transition-transform bg-purple-100/20 rounded-full p-1 sm:p-2 backdrop-blur-sm border border-purple-300/50"
+                                                            onClick={isMobile ? () => handleSelectedEmojiTap(index) : () => removeEmoji(index)}
+                                                            className={`text-2xl sm:text-3xl cursor-pointer hover:scale-110 transition-transform bg-purple-100/20 rounded-full p-1 sm:p-2 backdrop-blur-sm border border-purple-300/50 ${
+                                                                isMobile ? 'mobile-selected-emoji' : ''
+                                                            }`}
                                                         >
                                                             {emoji}
+                                                            {isMobile && (
+                                                                <button className="remove-emoji-btn">×</button>
+                                                            )}
                                                         </div>
                                                     ))
                                                 )}
                                             </div>
                                         </div>
+
+                                        {/* Mobile Instructions for Story Book */}
+                                        {isMobile && selectedEmojis.length > 0 && (
+                                            <div className="mt-3 text-center">
+                                                <p className="text-purple-200 text-xs">
+                                                    💡 Tap emojis in your story book to remove them
+                                                </p>
+                                            </div>
+                                        )}
 
                                         {/* Action Buttons */}
                                         <div className="flex gap-3 mt-6">
