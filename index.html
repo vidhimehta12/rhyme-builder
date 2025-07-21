@@ -201,70 +201,107 @@
             const generateRhyme = () => {
                 if (selectedEmojis.length === 0) return "Choose some emojis to make a rhyme! 🎵";
                 
-                // Create character list with names, ensuring all emojis are represented
-                const characters = selectedEmojis.map(emoji => {
-                    const name = emojiCharacters[emoji] || `${emoji} Friend`;
-                    return `${emoji} ${name}`;
+                // Categorize emojis by type for thematic storytelling
+                const animals = [], food = [], toys = [], nature = [], vehicles = [], space = [];
+                
+                selectedEmojis.forEach(emoji => {
+                    if (emojiLibrary.animals.includes(emoji)) animals.push(emoji);
+                    else if (emojiLibrary.food.includes(emoji)) food.push(emoji);
+                    else if (emojiLibrary.toys.includes(emoji)) toys.push(emoji);
+                    else if (emojiLibrary.nature.includes(emoji)) nature.push(emoji);
+                    else if (emojiLibrary.vehicles.includes(emoji)) vehicles.push(emoji);
+                    else if (emojiLibrary.space.includes(emoji)) space.push(emoji);
                 });
                 
-                // Generate rhyme based on number of characters
+                // Create character names
+                const getCharName = (emoji) => `${emoji} ${emojiCharacters[emoji] || `${emoji} Friend`}`;
+                
+                // Generate thematic story based on what categories are present
+                if (animals.length > 0) {
+                    return generateAnimalStory(animals, food, toys, nature, vehicles, space, getCharName);
+                } else {
+                    // Fallback to simple story if no animals
+                    return generateSimpleStory(selectedEmojis, getCharName);
+                }
+            };
+            
+            const generateAnimalStory = (animals, food, toys, nature, vehicles, space, getCharName) => {
+                const mainAnimal = getCharName(animals[0]);
+                const otherAnimals = animals.slice(1).map(getCharName);
+                
+                // Different story templates based on what's available
+                if (animals.length === 1) {
+                    // Single animal stories
+                    if (food.length > 0 && toys.length > 0) {
+                        const foodItem = getCharName(food[0]);
+                        const toy = getCharName(toys[0]);
+                        return `${mainAnimal} woke up feeling hungry,\nAnd found ${foodItem} looking so yummy!\nAfter eating, feeling so free,\nThey played with ${toy} under a tree!\n*pat tummy then play* What a perfect day! 🌟`;
+                    } else if (food.length > 0) {
+                        const foodItem = getCharName(food[0]);
+                        return `${mainAnimal} went searching for food,\nAnd found ${foodItem} in a very good mood!\n*munch munch* "Delicious!" they say,\n*rub belly* "What a wonderful day!" 😋`;
+                    } else if (toys.length > 0) {
+                        const toy = getCharName(toys[0]);
+                        return `${mainAnimal} loves to play,\nWith ${toy} every single day!\n*bounce bounce* Up and down,\n*giggle* The happiest friend in town! 🎈`;
+                    } else if (vehicles.length > 0 || space.length > 0) {
+                        const transport = vehicles.length > 0 ? getCharName(vehicles[0]) : getCharName(space[0]);
+                        const destination = space.length > 0 ? "to the stars above" : "on an adventure";
+                        return `${mainAnimal} climbed aboard ${transport},\nReady to travel ${destination}!\n*zoom zoom* Off they go,\n*wave goodbye* What a fantastic show! 🚀`;
+                    } else {
+                        return `Meet ${mainAnimal}!\n*wave hello* They love to explore,\nDancing and playing, and so much more!\n*spin around* Hip hooray! 🎵`;
+                    }
+                }
+                
+                // Multiple animals
+                if (animals.length === 2) {
+                    const animal2 = getCharName(animals[1]);
+                    if (food.length >= 2) {
+                        const food1 = getCharName(food[0]);
+                        const food2 = getCharName(food[1]);
+                        return `${mainAnimal} and ${animal2} went to eat,\n${food1} and ${food2} for a special treat!\n*chomp chomp* "So delicious!" they cheer,\n*high five* "Best meal of the year!" 🍽️`;
+                    } else if (toys.length > 0) {
+                        const toy = getCharName(toys[0]);
+                        return `${mainAnimal} and ${animal2} love to play,\nWith ${toy} every single day!\n*toss and catch* Back and forth,\n*laugh together* South and north! 🎯`;
+                    } else if (vehicles.length > 0) {
+                        const vehicle = getCharName(vehicles[0]);
+                        return `${mainAnimal} and ${animal2} hop aboard,\n${vehicle} takes them toward\nAdventures new and places bright,\n*zoom away* What a wonderful sight! 🌈`;
+                    }
+                }
+                
+                // Complex stories with 3+ animals
+                if (animals.length >= 3) {
+                    const animal2 = getCharName(animals[1]);
+                    const animal3 = getCharName(animals[2]);
+                    
+                    if (food.length > 0 && toys.length > 0 && nature.length > 0) {
+                        const foodItem = getCharName(food[0]);
+                        const toy = getCharName(toys[0]);
+                        const place = getCharName(nature[0]);
+                        return `${mainAnimal}, ${animal2}, and ${animal3} went out to play,\nNear ${place} on a beautiful day!\nThey shared ${foodItem} for lunch so sweet,\nThen played with ${toy} - what a treat!\n*dance in circle* Friends together,\n*jump for joy* In any weather! 🌻`;
+                    } else if (vehicles.length > 0 && space.length > 0) {
+                        const vehicle = getCharName(vehicles[0]);
+                        const destination = getCharName(space[0]);
+                        return `${mainAnimal}, ${animal2}, and ${animal3} climb aboard,\n${vehicle} takes them toward ${destination}!\nThrough the cosmos they will roam,\n*whoosh* Until it's time to go back home!\n*wave from space* What an adventure! 🚀`;
+                    }
+                }
+                
+                // Default animal story
+                const allAnimals = animals.map(getCharName);
+                if (allAnimals.length <= 2) {
+                    return `${allAnimals.join(' and ')} are the best of friends,\nTheir happy story never ends!\n*hug tight* Side by side,\n*smile big* Filled with pride! 💕`;
+                } else {
+                    return `${allAnimals.slice(0, -1).join(', ')} and ${allAnimals[allAnimals.length - 1]} all came to play,\nTogether they have fun all day!\n*group hug* Friends forever,\n*cheer loud* Always together! 🎪`;
+                }
+            };
+            
+            const generateSimpleStory = (selectedEmojis, getCharName) => {
+                const characters = selectedEmojis.map(getCharName);
                 if (characters.length === 1) {
-                    const templates = [
-                        `Meet {char1}!\n*wave hello* They love to play! 🎵`,
-                        `{char1} says hello,\n*wiggle fingers* Ready to go! ✨`,
-                        `Look, it's {char1}!\n*point and smile* What fun! 🌟`
-                    ];
-                    const template = templates[Math.floor(Math.random() * templates.length)];
-                    return template.replace('{char1}', characters[0]);
+                    return `Meet ${characters[0]}!\n*wave hello* They love to play! 🎵`;
+                } else if (characters.length === 2) {
+                    return `${characters[0]} and ${characters[1]},\nBest friends forever, you see!\n*hold hands* Hip hooray! 💕`;
+                } else {
+                    return `${characters.slice(0, -1).join(', ')} and ${characters[characters.length - 1]} all came to play,\nSinging and dancing every day!\n*dance together* What fun! 🌟`;
                 }
-                
-                if (characters.length === 2) {
-                    const templates = [
-                        `{char1} and {char2},\nBest friends forever, you see!\n*hold hands* Hip hooray! 💕`,
-                        `Meet {char1},\nAnd {char2} too!\nThey love to play,\n*dance around* Just like you! 🎶`,
-                        `{char1} says "Hello!"\n{char2} waves back, you know!\n*wave together* What a show! 🎭`
-                    ];
-                    const template = templates[Math.floor(Math.random() * templates.length)];
-                    return template.replace('{char1}', characters[0]).replace('{char2}', characters[1]);
-                }
-                
-                if (characters.length === 3) {
-                    const templates = [
-                        `Three friends came out to play:\n{char1}, {char2}, and {char3} today!\nThey sing and dance in every way,\n*jump three times* Hip hooray! 🎈`,
-                        `In the garden you will find,\n{char1}, {char2}, and {char3} so kind!\nThey play together all the time,\n*make a circle* What a rhyme! 🌻`,
-                        `{char1} started the fun,\n{char2} joined in on the run,\n{char3} made three,\n*spin around* Happy as can be! 🌟`
-                    ];
-                    const template = templates[Math.floor(Math.random() * templates.length)];
-                    return template.replace('{char1}', characters[0]).replace('{char2}', characters[1]).replace('{char3}', characters[2]);
-                }
-                
-                if (characters.length === 4) {
-                    const templates = [
-                        `Four friends came out to play:\n{char1}, {char2}, {char3}, and {char4} today!\nThey sing and dance in every way,\nLaughing together all the day!\n*march in place* Hip hooray! 🎪`,
-                        `{char1} said "Let's have fun!"\n{char2} said "Count me in, everyone!"\n{char3} and {char4} joined the game,\n*clap hands* Friends forever, that's their name! 👥`,
-                        `Ring around the garden bright,\n{char1}, {char2}, what a sight!\n{char3} and {char4} dance with glee,\n*fall down* Happy friends, you and me! 🌈`
-                    ];
-                    const template = templates[Math.floor(Math.random() * templates.length)];
-                    return template.replace('{char1}', characters[0]).replace('{char2}', characters[1])
-                                  .replace('{char3}', characters[2]).replace('{char4}', characters[3]);
-                }
-                
-                if (characters.length === 5) {
-                    const templates = [
-                        `Five special friends so bright:\n{char1}, {char2}, what a sight!\n{char3}, {char4}, and {char5} too,\nThey love to play games, just like you!\n*count on fingers* One, two, three, four, five!\n*jump up* They're all alive! 🎉`,
-                        `{char1} started the parade,\n{char2} joined the fun they made,\n{char3}, {char4}, and {char5} came along,\n*march together* Singing their happy song!\nFive friends together, strong and true! 🎵`
-                    ];
-                    const template = templates[Math.floor(Math.random() * templates.length)];
-                    return template.replace('{char1}', characters[0]).replace('{char2}', characters[1])
-                                  .replace('{char3}', characters[2]).replace('{char4}', characters[3])
-                                  .replace('{char5}', characters[4]);
-                }
-                
-                // For 6 characters
-                const template = `Six wonderful friends came out to play:\n{char1}, {char2}, and {char3} say "Hooray!"\n{char4}, {char5}, and {char6} join the fun,\nDancing and playing until day is done!\nTogether they laugh and together they sing,\n*dance in circle* Friends can do anything!\n*wave goodbye* What joy they bring! 🌟`;
-                return template.replace('{char1}', characters[0]).replace('{char2}', characters[1])
-                              .replace('{char3}', characters[2]).replace('{char4}', characters[3])
-                              .replace('{char5}', characters[4]).replace('{char6}', characters[5]);
             };
 
             const handleDrop = (e) => {
